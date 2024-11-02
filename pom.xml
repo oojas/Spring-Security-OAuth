@@ -85,7 +85,12 @@
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.11.5</version>
 		</dependency>
-		<!-- For extracting user details from jwtToken-->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+        <!-- For extracting user details from jwtToken-->
 	</dependencies>
 
 	<build>

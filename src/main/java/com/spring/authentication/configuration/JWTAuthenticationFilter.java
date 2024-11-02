@@ -5,7 +5,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -27,6 +29,19 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        try{
+            validateJWT(request, response, filterChain);
+            filterChain.doFilter(request, response);
+        }catch (AuthenticationException ex) {
+            // Let Spring Security handle the exception
+            SecurityContextHolder.clearContext();
+            throw ex;  // Propagate the exception to be handled by Spring Security
+        }
+
+
+    }
+
+    private void validateJWT(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         /*
         * request : The Http request
         * response : Our response from the database
@@ -34,27 +49,30 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         * for a resource. Filters use the FilterChain to invoke the next filter in the chain, or if the calling filter is the last filter in the chain,
         * to invoke the resource at the end of the chain.
         * */
-        final String authHeader=request.getHeader("Authorization"); // extracts the header from the jwt token. header's key is Authorization
+        final String authHeader = request.getHeader("Authorization"); // extracts the header from the jwt token. header's key is Authorization
         final String jwtToken;
         final String userEmail;
-        if(authHeader==null || !authHeader.startsWith("Bearer ")){ // the header always starts with key : Bearer
-            filterChain.doFilter(request,response); // we dont want to continue because the token is not available
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) { // the header always starts with key : Bearer
+            filterChain.doFilter(request,response);
+    return;
+        // we dont want to continue because the token is not available
         }
-        jwtToken=authHeader.substring(7); // 7 because after Bearer and the space the next index is 7
-        userEmail=jwtService.extractUserName(jwtToken);
-        if(userEmail!=null && SecurityContextHolder.getContext().getAuthentication()==null){
-            UserDetails userDetails=this.userDetailsService.loadUserByUsername(userEmail);
-            if(jwtService.isTokenValid(jwtToken,userDetails)){ // this basically means our Token is validated
-                UsernamePasswordAuthenticationToken authToken=new UsernamePasswordAuthenticationToken(
+        jwtToken = authHeader.substring(7); // 7 because after Bearer and the space the next index is 7
+        userEmail = jwtService.extractUserName(jwtToken);
+        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) { // the token has not been authenticated yet
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            if (jwtService.isTokenValid(jwtToken, userDetails)) { // this basically means our Token is validated
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null, // because we don't have credentials
                         userDetails.getAuthorities()
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request)); // Giving the authToken more details
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                SecurityContextHolder.getContext().setAuthentication(authToken); // letting the framework know that this has been authenticated so that the next time
+                // line 45 will not be null
             }
         }
 
-        filterChain.doFilter(request,response);
+
     }
 }
