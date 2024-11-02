@@ -1,0 +1,19 @@
+spring:
+  datasource: #Connection configuration
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: ojas
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop # ddl-auto means Data Definition. We could have chosen update because whenever the schema is updated in java it will get refreshed in our DB too. But we are choosing create because it is still development mode. Create basically means everything will be deleted once the session is over.
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format-sql: true
+    database: postgresql
+  logging:
+    level:
+      org.hibernate.SQL: debug
+      org.hibernate.type.descriptor.sql: trace
