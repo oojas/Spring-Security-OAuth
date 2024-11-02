@@ -27,7 +27,7 @@ To build and run the project, follow these steps:
 
 * Clone the repository: `git clone https://github.com/oojas/Spring-Security-OAuth.git`
 * Navigate to the project directory: cd spring-boot-security-jwt
-* Add database "jwt_security" to postgres 
+* Connect your postgres database with schema as postgres 
 * Build the project: mvn clean install
 * Run the project: mvn spring-boot:run 
 
